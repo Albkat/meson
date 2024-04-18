@@ -19,6 +19,7 @@ topic](https://github.com/topics/meson).
  - [Akira](https://github.com/akiraux/Akira), a native Linux app for UI and UX design built in Vala and Gtk
  - [AQEMU](https://github.com/tobimensch/aqemu), a Qt GUI for QEMU virtual machines, since version 0.9.3
  - [Arduino sample project](https://github.com/jpakkane/mesonarduino)
+ - [Asteria](https://github.com/lhmouse/asteria), another scripting language
  - [Audacious](https://github.com/audacious-media-player), a lightweight and versatile audio player
  - [bolt](https://gitlab.freedesktop.org/bolt/bolt), userspace daemon to enable security levels for Thunderbolt™ 3 on Linux
  - [bsdutils](https://github.com/dcantrell/bsdutils), alternative to GNU coreutils using software from FreeBSD
@@ -37,6 +38,8 @@ topic](https://github.com/topics/meson).
  - [DOSBox Staging](https://github.com/dosbox-staging/dosbox-staging), DOS/x86 emulator
  - [DPDK](http://dpdk.org/browse/dpdk), Data Plane Development Kit, a set of libraries and drivers for fast packet processing
  - [DXVK](https://github.com/doitsujin/dxvk), a Vulkan-based Direct3D 11 implementation for Linux using Wine
+ - [EFL](https://www.enlightenment.org/about-efl), multiplatform set of libraries, used by the Enlightenment windows manager and other projects
+ - [Enlightenment](https://www.enlightenment.org/), windows manager, compositor and minimal desktop for Linux
  - [elementary OS](https://github.com/elementary/), Linux desktop oriented distribution
  - [Emeus](https://github.com/ebassi/emeus), constraint based layout manager for GTK+
  - [Entangle](https://entangle-photo.org/), tethered camera control and capture desktop application
@@ -86,6 +89,7 @@ topic](https://github.com/topics/meson).
  - [Le](https://github.com/kirushyk/le), machine learning framework
  - [libcamera](https://git.linuxtv.org/libcamera.git/), a library to handle complex cameras on Linux, ChromeOS and Android
  - [Libdrm](https://gitlab.freedesktop.org/mesa/drm), a library for abstracting DRM kernel interfaces
+ - [libdwarf](https://www.prevanders.net/dwarf.html), a multiplatform DWARF parser library
  - [libeconf](https://github.com/openSUSE/libeconf), Enhanced config file parsing library, which merges config files placed in several locations into one
  - [Libepoxy](https://github.com/anholt/libepoxy/), a library for handling OpenGL function pointer management
  - [libfuse](https://github.com/libfuse/libfuse), the reference implementation of the Linux FUSE (Filesystem in Userspace) interface
@@ -106,6 +110,7 @@ format files
  - [Libzim](https://github.com/openzim/libzim), the reference implementation for the ZIM file format
  - [LXC](https://github.com/lxc/lxc), Linux container runtime
  - [Marker](https://github.com/fabiocolacio/Marker), a GTK-3 markdown editor
+ - [mcfgthread](https://github.com/lhmouse/mcfgthread), cornerstone library for C++11 threading on mingw-w64
  - [Mesa](https://mesa3d.org/), an open source graphics driver project
  - [Miniz](https://github.com/richgel999/miniz), a zlib replacement library
  - [MiracleCast](https://github.com/albfan/miraclecast), connect external monitors to your system via WiFi-Display specification aka Miracast
@@ -113,6 +118,7 @@ format files
  - [mrsh](https://github.com/emersion/mrsh), a minimal POSIX shell
  - [Nautilus](https://gitlab.gnome.org/GNOME/nautilus), the GNOME file manager
  - [Nemo](https://github.com/linuxmint/nemo), the file manager for the Cinnamon desktop environment
+ - [NetPanzer](https://github.com/netpanzer/netpanzer), a 2D online multiplayer tactical warfare game designed for fast action combat
  - [nvme-cli](https://github.com/linux-nvme/nvme-cli), NVMe management command line interface
  - [OcherBook](https://github.com/ccoffing/OcherBook), an open source book reader for Kobo devices
  - [oomd](https://github.com/facebookincubator/oomd), a userspace Out-Of-Memory (OOM) killer for Linux systems
@@ -158,12 +164,21 @@ format files
  - [szl](https://github.com/dimkr/szl), a lightweight, embeddable scripting language
  - [Taisei Project](https://taisei-project.org/), an open-source Touhou Project clone and fangame
  - [Terminology](https://github.com/billiob/terminology), a terminal emulator based on the Enlightenment Foundation Libraries
+ - [ThorVG](https://www.thorvg.org/), vector-based scenes and animations library
  - [Tilix](https://github.com/gnunn1/tilix), a tiling terminal emulator for Linux using GTK+ 3
  - [Tizonia](https://github.com/tizonia/tizonia-openmax-il), a command-line cloud music player for Linux with support for Spotify, Google Play Music, YouTube, SoundCloud, TuneIn, Plex servers and Chromecast devices
- - [Trilobite XUnit Test](https://github.com/trilobite-stdlib/trilo-xtest-c), a framework for testing C code
- - [Trilobite XType](https://github.com/trilobite-stdlib/trilo-xtype-c), a data type library for C code
- - [Trilobite XCore](https://github.com/trilobite-stdlib/trilo-xcore-c), a core essential library for C code
- - [Trilobite XData](https://github.com/trilobite-stdlib/trilo-xdata-c), a data structures and algorithms for C code
+ - [FSCL XTest](https://github.com/fossil-lib/tscl-xtest-c), a framework for testing C/C++ code
+ - [FSCL XMock](https://github.com/fossil-lib/tscl-xmock-c), a framework for mocking C/C++ code
+ - [FSCL XCore](https://github.com/fossil-lib/tscl-xcore-c), essintal compoments for C code
+ - [FSCL XTool](https://github.com/fossil-lib/tscl-xtool-c), essintal tool for low-level related task
+ - [FSCL XString](https://github.com/fossil-lib/tscl-xstring-c), string and char types in C
+ - [FSCL XToFu](https://github.com/fossil-lib/tscl-xtofu-c), a framework for generic types in C
+ - [FSCL XJellyfish](https://github.com/fossil-lib/tscl-xfish-c), a framework for AI development using JellyFish in C
+ - [FSCL XStructure](https://github.com/fossil-lib/tscl-xstructure-c), a framework for data structures in C
+ - [FSCL XAlgorithm](https://github.com/fossil-lib/tscl-xalgorithm-c), a framework for algorithms C
+ - [FSCL XPattern](https://github.com/fossil-lib/tscl-xpattern-c), a framework for design patterns C
+ - [FSCL XScience](https://github.com/fossil-lib/tscl-xscience-c), a framework for scientific projects in C
+ - [FSCL XCube](https://github.com/fossil-lib/tscl-xcube-c), a framework for creating a portable curses TUI in C
  - [UFJF-MLTK](https://github.com/mateus558/UFJF-Machine-Learning-Toolkit), A C++ cross-platform framework for machine learning algorithms development and testing
  - [Vala Language Server](https://github.com/benwaffle/vala-language-server), code intelligence engine for the Vala and Genie programming languages
  - [Valum](https://github.com/valum-framework/valum), a micro web framework written in Vala

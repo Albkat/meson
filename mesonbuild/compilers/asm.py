@@ -42,8 +42,10 @@ class NasmCompiler(Compiler):
                  linker: T.Optional['DynamicLinker'] = None,
                  full_version: T.Optional[str] = None, is_cross: bool = False):
         super().__init__(ccache, exelist, version, for_machine, info, linker, full_version, is_cross)
+        self.links_with_msvc = False
         if 'link' in self.linker.id:
             self.base_options.add(OptionKey('b_vscrt'))
+            self.links_with_msvc = True
 
     def needs_static_linker(self) -> bool:
         return True
@@ -83,9 +85,7 @@ class NasmCompiler(Compiler):
 
     def get_debug_args(self, is_debug: bool) -> T.List[str]:
         if is_debug:
-            if self.info.is_windows():
-                return []
-            return ['-g', '-F', 'dwarf']
+            return ['-g']
         return []
 
     def get_depfile_suffix(self) -> str:
@@ -97,10 +97,6 @@ class NasmCompiler(Compiler):
     def sanity_check(self, work_dir: str, environment: 'Environment') -> None:
         if self.info.cpu_family not in {'x86', 'x86_64'}:
             raise EnvironmentException(f'ASM compiler {self.id!r} does not support {self.info.cpu_family} CPU family')
-
-    def get_buildtype_args(self, buildtype: str) -> T.List[str]:
-        # FIXME: Not implemented
-        return []
 
     def get_pic_args(self) -> T.List[str]:
         return []
@@ -142,9 +138,12 @@ class YasmCompiler(NasmCompiler):
 
     def get_debug_args(self, is_debug: bool) -> T.List[str]:
         if is_debug:
-            if self.info.is_windows():
+            if self.info.is_windows() and self.links_with_msvc:
+                return ['-g', 'cv8']
+            elif self.info.is_darwin():
                 return ['-g', 'null']
-            return ['-g', 'dwarf2']
+            else:
+                return ['-g', 'dwarf2']
         return []
 
     def get_dependency_gen_args(self, outtarget: str, outfile: str) -> T.List[str]:
@@ -184,10 +183,6 @@ class MasmCompiler(Compiler):
     def sanity_check(self, work_dir: str, environment: 'Environment') -> None:
         if self.info.cpu_family not in {'x86', 'x86_64'}:
             raise EnvironmentException(f'ASM compiler {self.id!r} does not support {self.info.cpu_family} CPU family')
-
-    def get_buildtype_args(self, buildtype: str) -> T.List[str]:
-        # FIXME: Not implemented
-        return []
 
     def get_pic_args(self) -> T.List[str]:
         return []
@@ -239,10 +234,6 @@ class MasmARMCompiler(Compiler):
     def sanity_check(self, work_dir: str, environment: 'Environment') -> None:
         if self.info.cpu_family not in {'arm', 'aarch64'}:
             raise EnvironmentException(f'ASM compiler {self.id!r} does not support {self.info.cpu_family} CPU family')
-
-    def get_buildtype_args(self, buildtype: str) -> T.List[str]:
-        # FIXME: Not implemented
-        return []
 
     def get_pic_args(self) -> T.List[str]:
         return []

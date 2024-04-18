@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2012-2021 The Meson development team
-# Copyright © 2021 Intel Corporation
+# Copyright © 2021-2024 Intel Corporation
 from __future__ import annotations
 
 import collections
@@ -18,7 +18,7 @@ from .. import mlog
 from ..compilers import SUFFIX_TO_LANG
 from ..compilers.compilers import CompileCheckMode
 from ..interpreterbase import (ObjectHolder, noPosargs, noKwargs,
-                               FeatureNew, disablerIfNotFound,
+                               FeatureNew, FeatureNewKwargs, disablerIfNotFound,
                                InterpreterException)
 from ..interpreterbase.decorators import ContainerTypeInfo, typed_kwargs, KwargInfo, typed_pos_args
 from ..mesonlib import OptionKey
@@ -30,7 +30,7 @@ if T.TYPE_CHECKING:
     from ..compilers import Compiler, RunResult
     from ..interpreterbase import TYPE_var, TYPE_kwargs
     from .kwargs import ExtractRequired, ExtractSearchDirs
-    from .interpreter.interpreter import SourceOutputs
+    from .interpreter import SourceOutputs
     from ..mlog import TV_LoggableList
 
     from typing_extensions import TypedDict, Literal
@@ -96,6 +96,7 @@ if T.TYPE_CHECKING:
         compile_args: T.List[str]
         include_directories: T.List[build.IncludeDirs]
         dependencies: T.List[dependencies.Dependency]
+        depends: T.List[T.Union[build.BuildTarget, build.CustomTarget, build.CustomTargetIndex]]
 
 
 class _TestMode(enum.Enum):
@@ -145,6 +146,12 @@ _ARGS_KW: KwargInfo[T.List[str]] = KwargInfo(
 _DEPENDENCIES_KW: KwargInfo[T.List['dependencies.Dependency']] = KwargInfo(
     'dependencies',
     ContainerTypeInfo(list, dependencies.Dependency),
+    listify=True,
+    default=[],
+)
+_DEPENDS_KW: KwargInfo[T.List[T.Union[build.BuildTarget, build.CustomTarget, build.CustomTargetIndex]]] = KwargInfo(
+    'depends',
+    ContainerTypeInfo(list, (build.BuildTarget, build.CustomTarget, build.CustomTargetIndex)),
     listify=True,
     default=[],
 )
@@ -295,6 +302,9 @@ class CompilerHolder(ObjectHolder['Compiler']):
     @typed_pos_args('compiler.run', (str, mesonlib.File))
     @typed_kwargs('compiler.run', *_COMPILES_KWS)
     def run_method(self, args: T.Tuple['mesonlib.FileOrString'], kwargs: 'CompileKW') -> 'RunResult':
+        if self.compiler.language not in {'d', 'c', 'cpp', 'objc', 'objcpp', 'fortran'}:
+            FeatureNew.single_use(f'compiler.run for {self.compiler.get_display_language()} language',
+                                  '1.5.0', self.subproject, location=self.current_node)
         code = args[0]
         if isinstance(code, mesonlib.File):
             self.interpreter.add_build_def_file(code)
@@ -846,6 +856,7 @@ class CompilerHolder(ObjectHolder['Compiler']):
         return self.compiler.get_argument_syntax()
 
     @FeatureNew('compiler.preprocess', '0.64.0')
+    @FeatureNewKwargs('compiler.preprocess', '1.3.2', ['compile_args'], extra_message='compile_args were ignored before this version')
     @typed_pos_args('compiler.preprocess', varargs=(str, mesonlib.File, build.CustomTarget, build.CustomTargetIndex, build.GeneratedList), min_varargs=1)
     @typed_kwargs(
         'compiler.preprocess',
@@ -853,10 +864,12 @@ class CompilerHolder(ObjectHolder['Compiler']):
         KwargInfo('compile_args', ContainerTypeInfo(list, str), listify=True, default=[]),
         _INCLUDE_DIRS_KW,
         _DEPENDENCIES_KW.evolve(since='1.1.0'),
+        _DEPENDS_KW.evolve(since='1.4.0'),
     )
     def preprocess_method(self, args: T.Tuple[T.List['mesonlib.FileOrString']], kwargs: 'PreprocessKW') -> T.List[build.CustomTargetIndex]:
         compiler = self.compiler.get_preprocessor()
-        sources: 'SourceOutputs' = self.interpreter.source_strings_to_files(args[0])
+        _sources: T.List[mesonlib.File] = self.interpreter.source_strings_to_files(args[0])
+        sources = T.cast('T.List[SourceOutputs]', _sources)
         if any(isinstance(s, (build.CustomTarget, build.CustomTargetIndex, build.GeneratedList)) for s in sources):
             FeatureNew.single_use('compiler.preprocess with generated sources', '1.1.0', self.subproject,
                                   location=self.current_node)
@@ -877,7 +890,8 @@ class CompilerHolder(ObjectHolder['Compiler']):
             self.interpreter.backend,
             kwargs['compile_args'],
             kwargs['include_directories'],
-            kwargs['dependencies'])
+            kwargs['dependencies'],
+            kwargs['depends'])
         self.interpreter.add_target(tg.name, tg)
         # Expose this target as list of its outputs, so user can pass them to
         # other targets, list outputs, etc.

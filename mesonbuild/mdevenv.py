@@ -5,16 +5,17 @@ import argparse
 import tempfile
 import shutil
 import itertools
+import typing as T
 
 from pathlib import Path
 from . import build, minstall
 from .mesonlib import (EnvironmentVariables, MesonException, is_windows, setup_vsenv, OptionKey,
-                       get_wine_shortpath, MachineChoice)
+                       get_wine_shortpath, MachineChoice, relpath)
 from . import mlog
 
-import typing as T
+
 if T.TYPE_CHECKING:
-    from .backends import InstallData
+    from .backend.backends import InstallData
 
 POWERSHELL_EXES = {'pwsh.exe', 'powershell.exe'}
 
@@ -139,7 +140,7 @@ def write_gdb_script(privatedir: Path, install_data: 'InstallData', workdir: Pat
         if first_time:
             gdbinit_path = gdbinit_path.resolve()
             workdir_path = workdir.resolve()
-            rel_path = gdbinit_path.relative_to(workdir_path)
+            rel_path = Path(relpath(gdbinit_path, workdir_path))
             mlog.log('Meson detected GDB helpers and added config in', mlog.bold(str(rel_path)))
             mlog.log('To load it automatically you might need to:')
             mlog.log(' - Add', mlog.bold(f'add-auto-load-safe-path {gdbinit_path.parent}'),

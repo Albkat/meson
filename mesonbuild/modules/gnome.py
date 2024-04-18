@@ -1,16 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
 # Copyright 2015-2016 The Meson development team
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 '''This module provides helper functions for Gnome/GLib related
 functionality such as gobject-introspection, gresources and gtk-doc'''
@@ -459,7 +448,10 @@ class GnomeModule(ExtensionModule):
         # Always include current directory, but after paths set by user
         source_dirs.append(os.path.join(state.build_to_src, state.subdir))
 
-        for source_dir in OrderedSet(source_dirs):
+        # Clean up duplicate directories
+        source_dirs = list(OrderedSet(os.path.normpath(dir) for dir in source_dirs))
+
+        for source_dir in source_dirs:
             cmd += ['--sourcedir', source_dir]
 
         if kwargs['c_name']:
@@ -518,6 +510,7 @@ class GnomeModule(ExtensionModule):
             install_dir=[kwargs['install_dir']] if kwargs['install_dir'] else [],
             install_tag=['runtime'],
         )
+        target_c.source_dirs = source_dirs
 
         if gresource: # Only one target for .gresource files
             return ModuleReturnValue(target_c, [target_c])
@@ -1881,20 +1874,21 @@ class GnomeModule(ExtensionModule):
             GType
             {func_prefix}@enum_name@_get_type (void)
             {{
-            static gsize gtype_id = 0;
-            static const G@Type@Value values[] = {{'''))
+                static gsize gtype_id = 0;
+                static const G@Type@Value values[] = {{'''))
 
-        c_cmd.extend(['--vprod', '    { C_@TYPE@(@VALUENAME@), "@VALUENAME@", "@valuenick@" },'])
+        c_cmd.extend(['--vprod', '        { C_@TYPE@ (@VALUENAME@), "@VALUENAME@", "@valuenick@" },'])
 
         c_cmd.append('--vtail')
         c_cmd.append(textwrap.dedent(
-            '''    { 0, NULL, NULL }
-            };
-            if (g_once_init_enter (&gtype_id)) {
-                GType new_type = g_@type@_register_static (g_intern_static_string ("@EnumName@"), values);
-                g_once_init_leave (&gtype_id, new_type);
-            }
-            return (GType) gtype_id;
+            '''\
+                    { 0, NULL, NULL }
+                };
+                if (g_once_init_enter (&gtype_id)) {
+                    GType new_type = g_@type@_register_static (g_intern_static_string ("@EnumName@"), values);
+                    g_once_init_leave (&gtype_id, new_type);
+                }
+                return (GType) gtype_id;
             }'''))
         c_cmd.append('@INPUT@')
 
@@ -1903,13 +1897,16 @@ class GnomeModule(ExtensionModule):
         # .h file generation
         h_cmd = cmd.copy()
 
+        if header_prefix and not header_prefix.endswith('\n'):
+            header_prefix += '\n'  # Extra trailing newline for style
+
         h_cmd.append('--fhead')
         h_cmd.append(textwrap.dedent(
-            f'''#pragma once
+            f'''\
+            #pragma once
 
             #include <glib-object.h>
             {header_prefix}
-
             G_BEGIN_DECLS
             '''))
 
@@ -1919,9 +1916,13 @@ class GnomeModule(ExtensionModule):
             /* enumerations from "@basename@" */
             '''))
 
+        extra_newline = ''
+        if decl_decorator:
+            extra_newline = '\n'  # Extra leading newline for style
+
         h_cmd.append('--vhead')
-        h_cmd.append(textwrap.dedent(
-            f'''
+        h_cmd.append(extra_newline + textwrap.dedent(
+            f'''\
             {decl_decorator}
             GType {func_prefix}@enum_name@_get_type (void);
             #define @ENUMPREFIX@_TYPE_@ENUMSHORT@ ({func_prefix}@enum_name@_get_type())'''))

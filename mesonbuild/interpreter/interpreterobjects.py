@@ -284,7 +284,9 @@ class EnvironmentVariablesHolder(ObjectHolder[mesonlib.EnvironmentVariables], Mu
 
     def __init__(self, obj: mesonlib.EnvironmentVariables, interpreter: 'Interpreter'):
         super().__init__(obj, interpreter)
+        MutableInterpreterObject.__init__(self)
         self.methods.update({'set': self.set_method,
+                             'unset': self.unset_method,
                              'append': self.append_method,
                              'prepend': self.prepend_method,
                              })
@@ -307,13 +309,22 @@ class EnvironmentVariablesHolder(ObjectHolder[mesonlib.EnvironmentVariables], Mu
     @typed_kwargs('environment.set', ENV_SEPARATOR_KW)
     def set_method(self, args: T.Tuple[str, T.List[str]], kwargs: 'EnvironmentSeparatorKW') -> None:
         name, values = args
+        self.check_used(self.interpreter, fatal=False)
         self.held_object.set(name, values, kwargs['separator'])
+
+    @FeatureNew('environment.unset', '1.4.0')
+    @typed_pos_args('environment.unset', str)
+    @noKwargs
+    def unset_method(self, args: T.Tuple[str], kwargs: TYPE_kwargs) -> None:
+        self.check_used(self.interpreter, fatal=False)
+        self.held_object.unset(args[0])
 
     @typed_pos_args('environment.append', str, varargs=str, min_varargs=1)
     @typed_kwargs('environment.append', ENV_SEPARATOR_KW)
     def append_method(self, args: T.Tuple[str, T.List[str]], kwargs: 'EnvironmentSeparatorKW') -> None:
         name, values = args
         self.warn_if_has_name(name)
+        self.check_used(self.interpreter, fatal=False)
         self.held_object.append(name, values, kwargs['separator'])
 
     @typed_pos_args('environment.prepend', str, varargs=str, min_varargs=1)
@@ -321,6 +332,7 @@ class EnvironmentVariablesHolder(ObjectHolder[mesonlib.EnvironmentVariables], Mu
     def prepend_method(self, args: T.Tuple[str, T.List[str]], kwargs: 'EnvironmentSeparatorKW') -> None:
         name, values = args
         self.warn_if_has_name(name)
+        self.check_used(self.interpreter, fatal=False)
         self.held_object.prepend(name, values, kwargs['separator'])
 
 
@@ -331,6 +343,7 @@ class ConfigurationDataHolder(ObjectHolder[build.ConfigurationData], MutableInte
 
     def __init__(self, obj: build.ConfigurationData, interpreter: 'Interpreter'):
         super().__init__(obj, interpreter)
+        MutableInterpreterObject.__init__(self)
         self.methods.update({'set': self.set_method,
                              'set10': self.set10_method,
                              'set_quoted': self.set_quoted_method,
@@ -342,37 +355,36 @@ class ConfigurationDataHolder(ObjectHolder[build.ConfigurationData], MutableInte
                              })
 
     def __deepcopy__(self, memo: T.Dict) -> 'ConfigurationDataHolder':
-        return ConfigurationDataHolder(copy.deepcopy(self.held_object), self.interpreter)
-
-    def is_used(self) -> bool:
-        return self.held_object.used
-
-    def __check_used(self) -> None:
+        obj = ConfigurationDataHolder(copy.deepcopy(self.held_object), self.interpreter)
         if self.is_used():
-            raise InterpreterException("Can not set values on configuration object that has been used.")
+            # Copies of used ConfigurationData used to be immutable. It is now
+            # allowed but we need this flag to print a FeatureNew warning if
+            # that happens.
+            obj.mutable_feature_new = True
+        return obj
 
     @typed_pos_args('configuration_data.set', str, (str, int, bool))
     @typed_kwargs('configuration_data.set', _CONF_DATA_SET_KWS)
     def set_method(self, args: T.Tuple[str, T.Union[str, int, bool]], kwargs: 'kwargs.ConfigurationDataSet') -> None:
-        self.__check_used()
+        self.check_used(self.interpreter)
         self.held_object.values[args[0]] = (args[1], kwargs['description'])
 
     @typed_pos_args('configuration_data.set_quoted', str, str)
     @typed_kwargs('configuration_data.set_quoted', _CONF_DATA_SET_KWS)
     def set_quoted_method(self, args: T.Tuple[str, str], kwargs: 'kwargs.ConfigurationDataSet') -> None:
-        self.__check_used()
+        self.check_used(self.interpreter)
         escaped_val = '\\"'.join(args[1].split('"'))
         self.held_object.values[args[0]] = (f'"{escaped_val}"', kwargs['description'])
 
     @typed_pos_args('configuration_data.set10', str, (int, bool))
     @typed_kwargs('configuration_data.set10', _CONF_DATA_SET_KWS)
     def set10_method(self, args: T.Tuple[str, T.Union[int, bool]], kwargs: 'kwargs.ConfigurationDataSet') -> None:
-        self.__check_used()
+        self.check_used(self.interpreter)
         # bool is a subclass of int, so we need to check for bool explicitly.
         # We already have typed_pos_args checking that this is either a bool or
         # an int.
         if not isinstance(args[1], bool):
-            mlog.deprecation('configuration_data.set10 with number. the `set10` '
+            mlog.deprecation('configuration_data.set10 with number. The `set10` '
                              'method should only be used with booleans',
                              location=self.interpreter.current_node)
             if args[1] < 0:
@@ -430,6 +442,7 @@ class ConfigurationDataHolder(ObjectHolder[build.ConfigurationData], MutableInte
     @noKwargs
     def merge_from_method(self, args: T.Tuple[build.ConfigurationData], kwargs: TYPE_kwargs) -> None:
         from_object = args[0]
+        self.check_used(self.interpreter)
         self.held_object.values.update(from_object.values)
 
 
@@ -701,7 +714,16 @@ class IncludeDirsHolder(ObjectHolder[build.IncludeDirs]):
     pass
 
 class FileHolder(ObjectHolder[mesonlib.File]):
-    pass
+    def __init__(self, file: mesonlib.File, interpreter: 'Interpreter'):
+        super().__init__(file, interpreter)
+        self.methods.update({'full_path': self.full_path_method,
+                             })
+
+    @noPosargs
+    @noKwargs
+    @FeatureNew('file.full_path', '1.4.0')
+    def full_path_method(self, args: T.List[TYPE_var], kwargs: TYPE_kwargs) -> str:
+        return self.held_object.absolute_path(self.env.source_dir, self.env.build_dir)
 
 class HeadersHolder(ObjectHolder[build.Headers]):
     pass
@@ -726,7 +748,7 @@ class GeneratedObjectsHolder(ObjectHolder[build.ExtractedObjects]):
 
 class Test(MesonInterpreterObject):
     def __init__(self, name: str, project: str, suite: T.List[str],
-                 exe: T.Union[ExternalProgram, build.Executable, build.CustomTarget],
+                 exe: T.Union[ExternalProgram, build.Executable, build.CustomTarget, build.CustomTargetIndex],
                  depends: T.List[T.Union[build.CustomTarget, build.BuildTarget]],
                  is_parallel: bool,
                  cmd_args: T.List[T.Union[str, mesonlib.File, build.Target]],
@@ -749,7 +771,7 @@ class Test(MesonInterpreterObject):
         self.priority = priority
         self.verbose = verbose
 
-    def get_exe(self) -> T.Union[ExternalProgram, build.Executable, build.CustomTarget]:
+    def get_exe(self) -> T.Union[ExternalProgram, build.Executable, build.CustomTarget, build.CustomTargetIndex]:
         return self.exe
 
     def get_name(self) -> str:
